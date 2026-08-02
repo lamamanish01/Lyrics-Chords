@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Lyric;
+use App\Models\Song;
+use Illuminate\Http\Request;
+
+class LyricController extends Controller
+{
+    public function create(Request $request)
+    {
+        $songId = $request->query('song_id');
+        $songs = Song::pluck('title', 'id');
+        return view('lyrics.create', compact('songs', 'songId'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'song_id' => 'required|exists:songs,id',
+            'content' => 'required|string',
+            'section' => 'nullable|string|max:50',
+        ]);
+
+        Lyric::create($validated);
+        return redirect()->route('songs.show', $validated['song_id'])
+                         ->with('success', 'Lyric added.');
+    }
+
+    public function edit(Lyric $lyric)
+    {
+        $songs = Song::pluck('title', 'id');
+        return view('lyrics.edit', compact('lyric', 'songs'));
+    }
+
+    public function update(Request $request, Lyric $lyric)
+    {
+        $validated = $request->validate([
+            'song_id' => 'required|exists:songs,id',
+            'content' => 'required|string',
+            'section' => 'nullable|string|max:50',
+        ]);
+
+        $lyric->update($validated);
+        return redirect()->route('songs.show', $validated['song_id'])
+                         ->with('success', 'Lyric updated.');
+    }
+
+    public function destroy(Lyric $lyric)
+    {
+        $songId = $lyric->song_id;
+        $lyric->delete();
+        return redirect()->route('songs.show', $songId)
+                         ->with('success', 'Lyric deleted.');
+    }
+}
