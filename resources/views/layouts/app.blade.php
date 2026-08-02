@@ -14,6 +14,7 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        /* ... your existing CSS ... (keep all styles exactly as you have them) */
         :root {
             --primary: #5e5ce6;
             --primary-hover: #4b49d1;
@@ -98,6 +99,42 @@
             margin-top: 2rem;
             border-top: 1px solid #1e293b;
             padding-top: 1rem;
+        }
+
+        /* ---- Sub‑menu for Settings ---- */
+        .sidebar-nav .nav-parent {
+            cursor: pointer;
+            user-select: none;
+        }
+        .sidebar-nav .nav-parent .toggle-icon {
+            margin-left: auto;
+            transition: transform 0.3s;
+        }
+        .sidebar-nav .nav-parent.open .toggle-icon {
+            transform: rotate(90deg);
+        }
+        .sidebar-nav .nav-sub {
+            list-style: none;
+            padding: 0 0 0 1.5rem;
+            margin: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .sidebar-nav .nav-sub.open {
+            max-height: 300px; /* adjust if you have many items */
+        }
+        .sidebar-nav .nav-sub li {
+            margin-bottom: 0.2rem;
+        }
+        .sidebar-nav .nav-sub a {
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            font-size: 0.9rem;
+            border-radius: 6px;
+        }
+        .sidebar-nav .nav-sub a i {
+            width: 20px;
+            margin-right: 0.5rem;
         }
 
         /* ---- Overlay (mobile) ---- */
@@ -389,16 +426,48 @@
             <i class="fas fa-music"></i> {{ config('app.name') }}
         </div>
         <ul class="sidebar-nav">
+            <!-- Dashboard -->
             <li>
                 <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <i class="fas fa-th-large"></i> Dashboard
                 </a>
             </li>
-            <li>
-                <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}">
-                    <i class="fas fa-users"></i> Users
-                </a>
-            </li>
+
+            <!-- ========== SETTINGS BLOCK – NOW ALWAYS CLOSED BY DEFAULT ========== -->
+            @canany(['view users', 'view roles', 'view permissions'])
+                <li>
+                    <a class="nav-parent">   <!-- 👈 removed the conditional 'open' -->
+                        <i class="fas fa-cog"></i> Settings
+                        <i class="fas fa-chevron-right toggle-icon"></i>
+                    </a>
+                    <ul class="nav-sub">    <!-- 👈 removed the conditional 'open' -->
+                        @can('view users')
+                            <li>
+                                <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}">
+                                    <i class="fas fa-users"></i> Users
+                                </a>
+                            </li>
+                        @endcan
+                        @can('view roles')
+                            <li>
+                                <a href="{{ route('roles.index') }}" class="{{ request()->routeIs('roles.*') ? 'active' : '' }}">
+                                    <i class="fas fa-user-tag"></i> Roles
+                                </a>
+                            </li>
+                        @endcan
+                        @can('view permissions')
+                            <li>
+                                <a href="{{ route('permissions.index') }}" class="{{ request()->routeIs('permissions.*') ? 'active' : '' }}">
+                                    <i class="fas fa-key"></i> Permissions
+                                </a>
+                            </li>
+                        @endcan
+                    </ul>
+                </li>
+            @endcanany
+            <!-- ========== END SETTINGS BLOCK ========== -->
+
+            <!-- Songs & Collections -->
             <li>
                 <a href="{{ route('songs.index') }}" class="{{ request()->routeIs('songs.*') ? 'active' : '' }}">
                     <i class="fas fa-music"></i> Songs
@@ -409,6 +478,8 @@
                     <i class="fas fa-folder"></i> Collections
                 </a>
             </li>
+
+            <!-- Logout -->
             <li class="logout-link">
                 <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                     <i class="fas fa-sign-out-alt"></i> Logout
@@ -453,7 +524,6 @@
                         <span class="d-none d-md-inline text-secondary">{{ Auth::user()->name ?? 'Guest' }}</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <!-- Profile: shows user details -->
                         <li><a class="dropdown-item" href="{{ route('users.show', auth()->id()) }}"><i class="fas fa-user"></i>Profile</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
@@ -560,6 +630,35 @@
                 });
             }
 
+            // ----- Settings toggle (refined) with close on other links -----
+            const settingsParent = document.querySelector('.nav-parent');
+            const settingsSub = document.querySelector('.nav-sub');
+
+            if (settingsParent && settingsSub) {
+                // Toggle open/close on parent click
+                settingsParent.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    this.classList.toggle('open');
+                    settingsSub.classList.toggle('open');
+                });
+
+                // Close submenu when a child link is clicked
+                settingsSub.querySelectorAll('a').forEach(function(link) {
+                    link.addEventListener('click', function() {
+                        settingsParent.classList.remove('open');
+                        settingsSub.classList.remove('open');
+                    });
+                });
+
+                // Close submenu when ANY other sidebar link is clicked
+                document.querySelectorAll('.sidebar-nav > li > a:not(.nav-parent)').forEach(function(link) {
+                    link.addEventListener('click', function() {
+                        settingsParent.classList.remove('open');
+                        settingsSub.classList.remove('open');
+                    });
+                });
+            }
+
             // ----- AJAX Search (only on Songs index) -----
             const searchFormAjax = document.getElementById('searchForm');
             const searchInputAjax = searchFormAjax?.querySelector('.form-control');
@@ -649,7 +748,7 @@
                 });
             });
 
-            // ----- Toast success messages -----
+            // ----- Toast success/error messages -----
             @if(session('success'))
                 Swal.fire({
                     toast: true,

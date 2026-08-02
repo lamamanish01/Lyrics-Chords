@@ -6,9 +6,21 @@ use App\Models\Song;
 use App\Models\Collection;
 use App\Services\ChordTransposer;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class SongController extends Controller
+class SongController extends Controller implements HasMiddleware
 {
+    public static function middleware()
+    {
+        return [
+            new Middleware('permission:view songs', only: ['index', 'show']),
+            new Middleware('permission:create songs', only: ['create', 'store']),
+            new Middleware('permission:edit songs', only: ['edit', 'update']),
+            new Middleware('permission:delete songs', only: ['destroy']),
+        ];
+    }
+    
     public function index(Request $request)
     {
         $query = Song::with('collections');

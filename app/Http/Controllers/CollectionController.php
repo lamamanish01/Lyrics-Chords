@@ -5,9 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\Collection;
 use App\Models\Song;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class CollectionController extends Controller
+class CollectionController extends Controller implements HasMiddleware
 {
+    public static function middleware()
+    {
+        return [
+            new Middleware('permission:view collections', only: ['index', 'show']),
+            new Middleware('permission:create collections', only: ['create', 'store']),
+            new Middleware('permission:edit collections', only: ['edit', 'update']),
+            new Middleware('permission:delete collections', only: ['destroy']),
+        ];
+    }
+
     public function index()
     {
         $collections = Collection::withCount('songs')->get();

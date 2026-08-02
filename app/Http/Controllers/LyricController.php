@@ -6,9 +6,21 @@ use App\Helpers\ChordFormatter;
 use App\Models\Lyric;
 use App\Models\Song;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class LyricController extends Controller
+class LyricController extends Controller implements HasMiddleware
 {
+    public static function middleware()
+    {
+        return [
+            new Middleware('permission:view lyrics', only: ['index', 'show']),
+            new Middleware('permission:create lyrics', only: ['create', 'store']),
+            new Middleware('permission:edit lyrics', only: ['edit', 'update']),
+            new Middleware('permission:delete lyrics', only: ['destroy']),
+        ];
+    }
+
     public function create(Request $request)
     {
         $songId = $request->query('song_id');
