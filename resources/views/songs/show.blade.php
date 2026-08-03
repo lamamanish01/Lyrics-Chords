@@ -45,11 +45,15 @@
                         </div>
                     @endif
                     <div class="mt-2 d-flex gap-2">
-                        <a href="{{ route('lyrics.edit', $lyric) }}" class="btn btn-sm btn-outline-warning">Edit</a>
-                        <form action="{{ route('lyrics.destroy', $lyric) }}" method="POST" class="delete-form" style="display:inline" data-confirm="Delete this lyric?">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                        </form>
+                        @can('edit lyrics')
+                            <a href="{{ route('lyrics.edit', $lyric) }}" class="btn btn-sm btn-outline-warning">Edit</a>
+                        @endcan
+                        @can('delete lyrics')
+                            <form action="{{ route('lyrics.destroy', $lyric) }}" method="POST" class="delete-form" style="display:inline" data-confirm="Delete this lyric?">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        @endcan
                     </div>
                 </div>
             @empty
