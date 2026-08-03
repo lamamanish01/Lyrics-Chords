@@ -548,7 +548,7 @@
 
         <!-- Footer -->
         <footer class="text-center text-muted py-3 border-top" style="border-color: var(--border-color) !important;">
-            <small>&copy; {{ date('Y') }} {{ config('app.name') }} – Built with <i class="fas fa-heart text-danger"></i></small>
+            <small>&copy; {{ date('Y') }} Syncinfotech Pvt. Ltd. – All rights reserved <i class="fas fa-heart text-danger"></i></small>
         </footer>
     </div>
 
