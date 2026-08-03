@@ -7,7 +7,11 @@
                 <th style="min-width: 120px;">Artist</th>
                 <th style="min-width: 80px;">Genre</th>
                 <th style="min-width: 100px;">Collections</th>
-                <th style="min-width: 120px;" class="text-end">Actions</th>
+
+                {{-- ✅ Show Actions header only if user has ANY of these permissions --}}
+                @if(auth()->user()->can('view songs') || auth()->user()->can('edit songs') || auth()->user()->can('delete songs'))
+                    <th style="min-width: 120px;" class="text-end">Actions</th>
+                @endif
             </tr>
         </thead>
         <tbody>
@@ -22,17 +26,35 @@
                             <span class="badge-collection" style="background: {{ $coll->color }}; color: #fff; font-size: 0.65rem; padding: 0.2rem 0.4rem;">{{ $coll->name }}</span>
                         @endforeach
                     </td>
-                    <td class="text-end" style="white-space: nowrap;">
-                        <a href="{{ route('songs.show', $song) }}" class="btn btn-sm btn-outline-primary" title="View"><i class="fas fa-eye"></i></a>
-                        <a href="{{ route('songs.edit', $song) }}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-edit"></i></a>
-                        <form action="{{ route('songs.destroy', $song) }}" method="POST" class="delete-form" style="display:inline" data-confirm="Delete this song?">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
-                        </form>
-                    </td>
+
+                    {{-- ✅ Actions column cell – only render if user has any of the permissions --}}
+                    @if(auth()->user()->can('view songs') || auth()->user()->can('edit songs') || auth()->user()->can('delete songs'))
+                        <td class="text-end" style="white-space: nowrap;">
+                            @can('view songs')
+                                <a href="{{ route('songs.show', $song) }}" class="btn btn-sm btn-outline-primary" title="View"><i class="fas fa-eye"></i></a>
+                            @endcan
+
+                            @can('edit songs')
+                                <a href="{{ route('songs.edit', $song) }}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-edit"></i></a>
+                            @endcan
+
+                            @can('delete songs')
+                                <form action="{{ route('songs.destroy', $song) }}" method="POST" class="delete-form" style="display:inline" data-confirm="Delete this song?">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                                </form>
+                            @endcan
+                        </td>
+                    @endif
                 </tr>
             @empty
-                <tr><td colspan="6" class="text-center py-4 text-muted">No songs found.</td></tr>
+                {{-- Adjust colspan if actions column might be hidden --}}
+                <tr>
+                    <td colspan="{{ auth()->user()->can('view songs') || auth()->user()->can('edit songs') || auth()->user()->can('delete songs') ? 6 : 5 }}"
+                        class="text-center py-4 text-muted">
+                        No songs found.
+                    </td>
+                </tr>
             @endforelse
         </tbody>
     </table>
