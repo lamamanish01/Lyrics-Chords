@@ -12,7 +12,7 @@ class ChordTransposer
 
         $pattern = '/\b([A-G])([#b]?)([a-z0-9]+?)?(?:\/([A-G])([#b]?))?\b/ix';
 
-        return preg_replace_callback($pattern, function ($matches) use ($halfSteps) {
+        $result = preg_replace_callback($pattern, function ($matches) use ($halfSteps) {
             $root = $matches[1];
             $accidental = $matches[2] ?? '';
             $suffix = $matches[3] ?? '';
@@ -27,6 +27,12 @@ class ChordTransposer
 
             return $transposedRoot . $suffix . $transposedBass;
         }, $text);
+
+        // Safety: remove any double accidentals that might have slipped through
+        $result = str_replace('##', '#', $result);
+        $result = str_replace('bb', 'b', $result);
+
+        return $result;
     }
 
     protected static function transposeNote(string $note, int $halfSteps): string
@@ -41,6 +47,10 @@ class ChordTransposer
         $newIndex = ($index + $halfSteps) % 12;
         if ($newIndex < 0) $newIndex += 12;
 
-        return self::$chromatic[$newIndex];
+        $result = self::$chromatic[$newIndex];
+        // Extra safety inside note transposition
+        $result = str_replace('##', '#', $result);
+        $result = str_replace('bb', 'b', $result);
+        return $result;
     }
 }

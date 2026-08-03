@@ -20,7 +20,7 @@ class SongController extends Controller implements HasMiddleware
             new Middleware('permission:delete songs', only: ['destroy']),
         ];
     }
-    
+
     public function index(Request $request)
     {
         $query = Song::with('collections');

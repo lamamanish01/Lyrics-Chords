@@ -13,7 +13,6 @@
             @endforeach
         </div>
         <div class="mt-2 mt-md-0 d-flex gap-2">
-            <!-- Language Toggle Button (placed next to Controls) -->
             <button id="languageToggle" class="btn btn-outline-secondary btn-sm" title="Toggle language">
                 <i class="fas fa-language me-1"></i> <span id="langLabel">नेपाली</span>
             </button>
@@ -30,15 +29,12 @@
     </div>
 
     <div class="card-body">
-        <!-- Lyrics Container -->
-        <div id="lyrics-container" style="font-size: 16px; line-height: 1.0;">
+        <div id="lyrics-container" style="line-height: 1.0;">
             @forelse($lyrics as $lyric)
                 <div class="lyric-block mb-3 p-2 bg-light-subtle rounded-3 border-start border-4 border-primary">
-                    <!-- Romanized version (visible by default) -->
                     <div class="lyric-content lang-roman" data-section="{{ $lyric->section }}">
                         {!! \App\Helpers\ChordFormatter::toChordSheet($lyric->content) !!}
                     </div>
-                    <!-- Nepali version (hidden by default) -->
                     @if($lyric->content_nepali)
                         <div class="lyric-content lang-nepali" style="display: none;" data-section="{{ $lyric->section }}">
                             {!! \App\Helpers\ChordFormatter::toChordSheet($lyric->content_nepali) !!}
@@ -63,7 +59,7 @@
     </div>
 </div>
 
-<!-- Controls Modal (unchanged) -->
+<!-- Controls Modal -->
 <div class="modal fade" id="controlsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -73,7 +69,6 @@
             </div>
             <div class="modal-body" id="modalBody">
                 <div class="d-flex flex-column gap-3">
-                    <!-- Transpose -->
                     <div>
                         <label class="fw-bold me-2"><i class="fas fa-arrow-up-down text-primary"></i> Key:</label>
                         <div class="d-flex flex-wrap gap-1" id="transposeControls">
@@ -86,8 +81,6 @@
                             @endif
                         </div>
                     </div>
-
-                    <!-- Font Size -->
                     <div>
                         <label class="fw-bold me-2"><i class="fas fa-font text-primary"></i> Size:</label>
                         <div class="d-flex flex-wrap align-items-center gap-1">
@@ -98,8 +91,6 @@
                             <span class="badge bg-secondary" id="fontSizeDisplay">16</span>
                         </div>
                     </div>
-
-                    <!-- Chord Toggle & Auto-scroll -->
                     <div>
                         <div class="d-flex flex-wrap align-items-center gap-2">
                             <button id="chordToggle" class="btn btn-outline-info btn-sm">
@@ -117,8 +108,6 @@
                             <span class="text-muted small ms-auto" id="scrollStatus">Paused</span>
                         </div>
                     </div>
-
-                    <!-- Copy Buttons -->
                     <div>
                         <div class="d-flex flex-wrap gap-2">
                             <button id="copyLyricsWithChords" class="btn btn-outline-secondary btn-sm">
@@ -129,7 +118,6 @@
                             </button>
                         </div>
                     </div>
-
                     <div class="text-muted small">
                         <i class="fas fa-keyboard"></i> <kbd>Space</kbd> toggle scroll · <kbd>↑</kbd><kbd>↓</kbd> speed
                     </div>
@@ -148,31 +136,44 @@
         .lyric-block {
             background: #f8fafc;
             transition: background 0.2s;
+            overflow-x: auto;
         }
         [data-bs-theme="dark"] .lyric-block {
             background: #1e2633;
         }
+
+        #lyrics-container {
+            font-size: 16px;
+        }
+
         .lyric-content {
-            font-family: 'Courier New', monospace;
-            white-space: pre;
-            line-height: 1.0;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            line-height: 1;
             margin: 0;
             padding: 0;
+            font-family: 'SF Mono', 'Consolas', 'Menlo', 'Liberation Mono', 'Courier New', monospace;
         }
-        .chord-line {
+
+        .lyric-content .chord-line,
+        .lyric-content .lyric-line {
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 1 !important;
+            white-space: pre;
+        }
+
+        .lyric-content .chord-line {
             color: var(--primary);
             font-weight: 600;
             font-size: 0.95em;
             letter-spacing: 0.5px;
-            margin: 0;
-            padding: 0;
-            line-height: 1.0;
         }
-        .lyric-line {
-            margin: 0;
-            padding: 0;
-            line-height: 1.0;
+        .lyric-content .lyric-line {
+            font-size: 1em;
         }
+
         .section-heading {
             font-weight: 700;
             font-size: 1.1em;
@@ -181,9 +182,11 @@
             margin: 0.5rem 0 0.15rem 0;
             color: var(--text-color);
         }
+
         #lyrics-container.hide-chords .chord-line {
             display: none;
         }
+
         .modal-content {
             background: var(--card-bg);
             color: var(--text-color);
@@ -193,18 +196,48 @@
         .modal-header, .modal-footer {
             border-color: var(--border-color);
         }
+
+        /* ----- MOBILE: MAXIMUM SPECIFICITY with !important ----- */
         @media (max-width: 576px) {
-            .card-header .d-flex {
-                flex-wrap: wrap;
-                gap: 0.5rem;
-                justify-content: flex-end;
+            /* Double ID for container */
+            #lyrics-container#lyrics-container {
+                font-size: 14px !important;
             }
-            .card-header .d-flex .btn {
-                font-size: 0.8rem;
-                padding: 0.25rem 0.5rem;
+            /* Container + .lyric-content */
+            #lyrics-container#lyrics-container .lyric-content {
+                font-size: 0.9rem !important;
             }
+            /* Container + .lyric-content + .chord-line */
+            #lyrics-container#lyrics-container .lyric-content .chord-line {
+                font-size: 0.85em !important;
+            }
+            /* Container + .lyric-content + .lyric-line */
+            #lyrics-container#lyrics-container .lyric-content .lyric-line {
+                font-size: 1em !important;
+            }
+
             .modal-body .form-range {
-                width: 80px !important;
+                width: 100% !important;
+                flex: 1;
+            }
+            #transposeControls .btn {
+                font-size: 0.7rem;
+                padding: 0.2rem 0.4rem;
+            }
+            .lyric-block {
+                padding: 0.5rem !important;
+            }
+            .modal-dialog {
+                margin: 0.5rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            #lyrics-container#lyrics-container {
+                font-size: 12px !important;
+            }
+            #lyrics-container#lyrics-container .lyric-content {
+                font-size: 0.8rem !important;
             }
         }
     </style>
@@ -231,7 +264,7 @@
                 });
             }
 
-            // ----- AJAX Transpose (unchanged) -----
+            // ----- AJAX Transpose -----
             const csrfToken = '{{ csrf_token() }}';
             const transposeUrl = '{{ route("songs.transpose.ajax", $song) }}';
             const transposeControls = document.getElementById('transposeControls');
@@ -243,8 +276,22 @@
             function applyStoredSettings() {
                 const container = getContainer();
                 if (!container) return;
-                const size = localStorage.getItem('lyricsFontSize') || 16;
-                container.style.fontSize = size + 'px';
+
+                const storedSize = localStorage.getItem('lyricsFontSize');
+                if (storedSize !== null) {
+                    container.style.fontSize = storedSize + 'px';
+                    const slider = document.getElementById('fontSizeSlider');
+                    const display = document.getElementById('fontSizeDisplay');
+                    if (slider) slider.value = storedSize;
+                    if (display) display.textContent = storedSize;
+                } else {
+                    container.style.fontSize = '';
+                    const slider = document.getElementById('fontSizeSlider');
+                    const display = document.getElementById('fontSizeDisplay');
+                    if (slider) slider.value = 16;
+                    if (display) display.textContent = 16;
+                }
+
                 const chordsVisible = localStorage.getItem('chordsVisible') !== 'false';
                 container.classList.toggle('hide-chords', !chordsVisible);
             }
@@ -300,8 +347,6 @@
                             oldContainer.parentNode.replaceChild(newContainer, oldContainer);
                             applyStoredSettings();
                             updateTransposeDisplay(transpose);
-                            // Re-attach language toggle? Not needed because we replace the container, but the toggle persists.
-                            // However, the new container may have new language blocks; we need to re-apply the current language state.
                             const romanBlocksNew = document.querySelectorAll('.lang-roman');
                             const nepaliBlocksNew = document.querySelectorAll('.lang-nepali');
                             if (showNepali) {
@@ -330,8 +375,20 @@
 
             applyStoredSettings();
 
-            // ----- Copy functions (unchanged) -----
-            // (Keep your existing copy logic here if needed)
+            const resetFontBtn = document.getElementById('fontReset');
+            if (resetFontBtn) {
+                resetFontBtn.addEventListener('click', function() {
+                    localStorage.removeItem('lyricsFontSize');
+                    const container = getContainer();
+                    if (container) {
+                        container.style.fontSize = '';
+                    }
+                    const slider = document.getElementById('fontSizeSlider');
+                    const display = document.getElementById('fontSizeDisplay');
+                    if (slider) slider.value = 16;
+                    if (display) display.textContent = 16;
+                });
+            }
         });
     </script>
 @endpush
