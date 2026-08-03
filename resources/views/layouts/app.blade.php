@@ -14,7 +14,7 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* ... your existing CSS ... (keep all styles exactly as you have them) */
+        /* ... (all styles remain exactly the same as before) ... */
         :root {
             --primary: #5e5ce6;
             --primary-hover: #4b49d1;
@@ -433,14 +433,14 @@
                 </a>
             </li>
 
-            <!-- ========== SETTINGS BLOCK – NOW ALWAYS CLOSED BY DEFAULT ========== -->
+            <!-- Settings – always closed by default; only opens on click -->
             @canany(['view users', 'view roles', 'view permissions'])
                 <li>
-                    <a class="nav-parent">   <!-- 👈 removed the conditional 'open' -->
+                    <a class="nav-parent">
                         <i class="fas fa-cog"></i> Settings
                         <i class="fas fa-chevron-right toggle-icon"></i>
                     </a>
-                    <ul class="nav-sub">    <!-- 👈 removed the conditional 'open' -->
+                    <ul class="nav-sub">
                         @can('view users')
                             <li>
                                 <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}">
@@ -465,7 +465,6 @@
                     </ul>
                 </li>
             @endcanany
-            <!-- ========== END SETTINGS BLOCK ========== -->
 
             <!-- Songs & Collections -->
             <li>
@@ -582,8 +581,9 @@
             overlay.addEventListener('click', function() {
                 toggleSidebar(false);
             });
-            // Close sidebar on any nav link click (mobile)
-            document.querySelectorAll('.sidebar-nav a').forEach(function(link) {
+
+            // ----- FIXED: Close sidebar on mobile when clicking links – EXCLUDE .nav-parent -----
+            document.querySelectorAll('.sidebar-nav a:not(.nav-parent)').forEach(function(link) {
                 link.addEventListener('click', function() {
                     if (window.innerWidth < 992) {
                         toggleSidebar(false);
@@ -630,7 +630,7 @@
                 });
             }
 
-            // ----- Settings toggle (refined) with close on other links -----
+            // ----- Settings toggle – closes when any other link is clicked -----
             const settingsParent = document.querySelector('.nav-parent');
             const settingsSub = document.querySelector('.nav-sub');
 
@@ -650,7 +650,7 @@
                     });
                 });
 
-                // Close submenu when ANY other sidebar link is clicked
+                // Close submenu when ANY other sidebar link is clicked (desktop)
                 document.querySelectorAll('.sidebar-nav > li > a:not(.nav-parent)').forEach(function(link) {
                     link.addEventListener('click', function() {
                         settingsParent.classList.remove('open');
