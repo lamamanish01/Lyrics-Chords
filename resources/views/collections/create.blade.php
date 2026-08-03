@@ -9,11 +9,17 @@
         <form action="{{ route('collections.store') }}" method="POST">
             @csrf
             <div class="mb-3">
-                <label for="name" class="form-label">Name</label>
+                <label for="name" class="form-label">
+                    Name
+                    <span class="text-danger">*</span></label>
+                </label>
                 <input type="text" name="name" id="name" class="form-control" value="{{ old('name') }}" required>
             </div>
             <div class="mb-3">
-                <label for="slug" class="form-label">Slug</label>
+                <label for="slug" class="form-label">
+                    Slug
+                    <span class="text-danger">*</span></label>
+                </label>
                 <input type="text" name="slug" id="slug" class="form-control" value="{{ old('slug') }}" required>
             </div>
             <div class="mb-3">

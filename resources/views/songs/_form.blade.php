@@ -2,13 +2,17 @@
     <div class="col-md-6">
         <div class="form-floating">
             <input type="text" name="title" id="title" class="form-control" value="{{ old('title', $song->title ?? '') }}" placeholder="Title" required>
-            <label for="title">Title</label>
+            <label for="title">Title
+                <span class="text-danger">*</span>
+            </label>
         </div>
     </div>
     <div class="col-md-6">
         <div class="form-floating">
             <input type="text" name="artist" id="artist" class="form-control" value="{{ old('artist', $song->artist ?? '') }}" placeholder="Artist" required>
-            <label for="artist">Artist</label>
+            <label for="artist">Artist
+                <span class="text-danger">*</span>
+            </label>
         </div>
     </div>
     <div class="col-md-4">

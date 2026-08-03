@@ -16,7 +16,9 @@
                 <!-- Left: Form -->
                 <div class="col-lg-6">
                     <div class="mb-3">
-                        <label for="song_id" class="form-label">Song</label>
+                        <label for="song_id" class="form-label">
+                            Song <span class="text-danger">*</span>
+                        </label> <!-- ✅ fixed duplicate </label> -->
                         <select name="song_id" id="song_id" class="form-select" required>
                             @foreach($songs as $id => $title)
                                 <option value="{{ $id }}" {{ old('song_id', $songId ?? '') == $id ? 'selected' : '' }}>{{ $title }}</option>
@@ -57,7 +59,20 @@
                             <h5 class="card-title mb-0"><i class="fas fa-eye me-2"></i>Preview (Romanized)</h5>
                         </div>
                         <div class="card-body" id="previewContainer">
-                            <div id="previewContent" style="font-family: 'Courier New', monospace; white-space: pre; line-height: 1.0; font-size: 16px; overflow-x: auto;">
+                            <div id="previewContent" style="
+                                font-family: 'Courier New', monospace;
+                                white-space: pre;
+                                line-height: 1.6;
+                                font-size: clamp(14px, 2vw, 18px);
+                                overflow-x: auto;
+                                overflow-y: auto;
+                                max-height: 500px;
+                                width: 100%;
+                                padding: 1rem;
+                                background: #f8f9fa;
+                                border-radius: 0.25rem;
+                                word-break: break-word;
+                            ">
                                 <em class="text-muted">Start typing to see the preview here.</em>
                             </div>
                         </div>
@@ -74,6 +89,7 @@
     .font-monospace {
         font-family: 'Courier New', monospace;
     }
+    /* Hide chord lines in the preview – if you want to show chords, remove this block */
     #previewContent .chord-line {
         display: none !important;
     }
@@ -90,9 +106,23 @@
         margin: 0.5rem 0 0.15rem 0;
         color: var(--text-color);
     }
+    /* Extra small screen adjustments */
+    @media (max-width: 576px) {
+        #previewContent {
+            font-size: 14px !important;
+            padding: 0.75rem !important;
+            max-height: 350px !important;
+        }
+        .card-body {
+            padding: 0.75rem;
+        }
+    }
     @media (max-width: 992px) {
         .col-lg-6 {
             margin-top: 1rem;
+        }
+        .bg-light-subtle {
+            min-height: auto !important;
         }
     }
 </style>
@@ -146,6 +176,7 @@
             previewDebounce = setTimeout(updatePreview, 300);
         });
 
+        // Initial preview if content already has a value (e.g., from old input)
         if (content.value.trim()) {
             updatePreview();
         }

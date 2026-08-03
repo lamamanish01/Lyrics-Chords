@@ -10,7 +10,10 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with('roles')->orderBy('name', 'asc')->paginate(15);
+        $users = User::whereDoesntHave('roles', function ($query) {
+            $query->where('name', 'Super Admin');
+        })->paginate(10);
+
         return view('users.index', compact('users'));
     }
 
@@ -21,6 +24,7 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        // dd($request->all());
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
@@ -32,8 +36,9 @@ class UserController extends Controller
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role'     => $validated['role'],
         ]);
+
+        $user->assignRole($validated['role']);
 
         return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
@@ -53,23 +58,23 @@ class UserController extends Controller
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email,' . $user->id,
-            'role'     => 'required|in:user,admin',
-            'password' => 'nullable|string|min:8|confirmed',
+            'role'     => 'required|in:admin,manager,viewer',
         ]);
 
-        $data = [
-            'name'  => $validated['name'],
-            'email' => $validated['email'],
-            'role'  => $validated['role'],
-        ];
-
-        if (!empty($validated['password'])) {
-            $data['password'] = Hash::make($validated['password']);
+        if ($request->filled('password')) {
+            $validated['password'] = Hash::make($request->password);
         }
 
-        $user->update($data);
+        $user->update($validated);
 
-        return redirect()->route('users.index')->with('success', 'User updated successfully.');
+        $newRole = $validated['role'];
+
+        $oldRole = $user->getRoleNames()->first();
+
+        $user->syncRoles([$newRole]);
+
+        return redirect()->route('users.index')
+                         ->with('success', 'User updated successfully.');
     }
 
     public function destroy(User $user)
