@@ -34,16 +34,10 @@
                 </thead>
                 <tbody>
                     @forelse($users as $user)
-                        @php
-                            // ✅ Get the user's roles as a collection of names
-                            $userRoles = $user->getRoleNames();
-                        @endphp
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td><strong>{{ $user->name }}</strong></td>
                             <td>{{ $user->email }}</td>
-
-                            {{-- ✅ Display all roles assigned to the user --}}
                             <td>
                                 @if($userRoles->count())
                                     @foreach($userRoles as $roleName)
@@ -56,7 +50,6 @@
 
                             <td>{{ $user->created_at->diffForHumans() }}</td>
 
-                            {{-- ✅ Actions column cell --}}
                             @if(auth()->user()->can('view users') || auth()->user()->can('edit users') || auth()->user()->can('delete users'))
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">

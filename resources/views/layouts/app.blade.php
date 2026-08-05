@@ -537,12 +537,6 @@
 
         <!-- Main content -->
         <div class="main-content">
-            @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
             @yield('content')
         </div>
 
@@ -748,7 +742,7 @@
                 });
             });
 
-            // ----- Toast success/error messages -----
+            // ----- Toast success/error messages WITH CLOSE BUTTON -----
             @if(session('success'))
                 Swal.fire({
                     toast: true,
@@ -756,6 +750,7 @@
                     icon: 'success',
                     title: '{{ session('success') }}',
                     showConfirmButton: false,
+                    showCloseButton: true,      // <-- Close button added
                     timer: 3000,
                     timerProgressBar: true
                 });
@@ -768,6 +763,7 @@
                     icon: 'error',
                     title: '{{ session('error') }}',
                     showConfirmButton: false,
+                    showCloseButton: true,      // <-- Close button added
                     timer: 3000,
                     timerProgressBar: true
                 });
