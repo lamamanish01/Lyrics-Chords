@@ -43,6 +43,21 @@ class DatabaseSeeder extends Seeder
 
         // ----- 3. Create "Pop" Collection -----
         $pop = Collection::firstOrCreate(
+            ['slug' => 'Bhajan'],
+            ['name' => 'Bhajan', 'description' => 'Neplai Christian Bhajan', 'color' => '#A8D925']
+        );
+
+        $pop = Collection::firstOrCreate(
+            ['slug' => 'Chorus'],
+            ['name' => 'Chorus', 'description' => 'Neplai Christian Chorus', 'color' => '#3E6BDE']
+        );
+
+        $pop = Collection::firstOrCreate(
+            ['slug' => 'Worship Songs'],
+            ['name' => 'Worship Songs', 'description' => 'Neplai Christian Worship Songs', 'color' => '#A11A98']
+        );
+
+        $pop = Collection::firstOrCreate(
             ['slug' => 'pop'],
             ['name' => 'Pop', 'description' => 'Popular music', 'color' => '#2ecc71']
         );
