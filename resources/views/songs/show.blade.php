@@ -137,10 +137,18 @@
 
 @push('css')
     <style>
+        /* ----- Remove card padding ----- */
+        .card,
+        .card-body,
+        .card-header {
+            padding: 0 !important;
+        }
+
         .lyric-block {
             background: #f8fafc;
             transition: background 0.2s;
-            overflow-x: auto;
+            overflow-x: auto;            /* Enable horizontal scroll */
+            -webkit-overflow-scrolling: touch; /* smooth scroll on iOS */
         }
         [data-bs-theme="dark"] .lyric-block {
             background: #1e2633;
@@ -150,6 +158,7 @@
             font-size: 16px;
         }
 
+        /* ----- Enforce no wrapping on chord/lyric lines ----- */
         .lyric-content {
             display: flex;
             flex-direction: column;
@@ -158,6 +167,11 @@
             margin: 0;
             padding: 0;
             font-family: 'SF Mono', 'Consolas', 'Menlo', 'Liberation Mono', 'Courier New', monospace;
+            white-space: pre !important;   /* force no wrap */
+            overflow-wrap: normal !important;
+            word-wrap: normal !important;
+            word-break: normal !important;
+            overflow-x: auto;              /* additional scroll container */
         }
 
         .lyric-content .chord-line,
@@ -165,17 +179,17 @@
             margin: 0 !important;
             padding: 0 !important;
             line-height: 1 !important;
-            white-space: pre;
+            white-space: pre !important;   /* each line also no wrap */
+            font-size: 1em;
+            letter-spacing: 0;
+            overflow-wrap: normal !important;
+            word-wrap: normal !important;
+            word-break: normal !important;
         }
 
         .lyric-content .chord-line {
             color: var(--primary);
             font-weight: 600;
-            font-size: 0.95em;
-            letter-spacing: 0.5px;
-        }
-        .lyric-content .lyric-line {
-            font-size: 1em;
         }
 
         .section-heading {
@@ -185,6 +199,7 @@
             padding-bottom: 0.15rem;
             margin: 0.5rem 0 0.15rem 0;
             color: var(--text-color);
+            white-space: normal;           /* headings can wrap */
         }
 
         #lyrics-container.hide-chords .chord-line {
@@ -201,25 +216,11 @@
             border-color: var(--border-color);
         }
 
-        /* ----- MOBILE: MAXIMUM SPECIFICITY with !important ----- */
+        /* ----- Mobile: base sizes (overridable by JS) ----- */
         @media (max-width: 576px) {
-            /* Double ID for container */
-            #lyrics-container#lyrics-container {
-                font-size: 14px !important;
+            #lyrics-container {
+                font-size: 14px;
             }
-            /* Container + .lyric-content */
-            #lyrics-container#lyrics-container .lyric-content {
-                font-size: 0.9rem !important;
-            }
-            /* Container + .lyric-content + .chord-line */
-            #lyrics-container#lyrics-container .lyric-content .chord-line {
-                font-size: 0.85em !important;
-            }
-            /* Container + .lyric-content + .lyric-line */
-            #lyrics-container#lyrics-container .lyric-content .lyric-line {
-                font-size: 1em !important;
-            }
-
             .modal-body .form-range {
                 width: 100% !important;
                 flex: 1;
@@ -228,20 +229,14 @@
                 font-size: 0.7rem;
                 padding: 0.2rem 0.4rem;
             }
-            .lyric-block {
-                padding: 0.5rem !important;
-            }
             .modal-dialog {
                 margin: 0.5rem;
             }
         }
 
         @media (max-width: 400px) {
-            #lyrics-container#lyrics-container {
-                font-size: 12px !important;
-            }
-            #lyrics-container#lyrics-container .lyric-content {
-                font-size: 0.8rem !important;
+            #lyrics-container {
+                font-size: 12px;
             }
         }
     </style>
@@ -292,8 +287,10 @@
                     container.style.fontSize = '';
                     const slider = document.getElementById('fontSizeSlider');
                     const display = document.getElementById('fontSizeDisplay');
-                    if (slider) slider.value = 16;
-                    if (display) display.textContent = 16;
+                    const computed = window.getComputedStyle(container).fontSize;
+                    const size = parseFloat(computed) || 16;
+                    if (slider) slider.value = size;
+                    if (display) display.textContent = Math.round(size);
                 }
 
                 const chordsVisible = localStorage.getItem('chordsVisible') !== 'false';
@@ -379,18 +376,54 @@
 
             applyStoredSettings();
 
-            const resetFontBtn = document.getElementById('fontReset');
-            if (resetFontBtn) {
-                resetFontBtn.addEventListener('click', function() {
+            // ----- Font size controls -----
+            const slider = document.getElementById('fontSizeSlider');
+            const display = document.getElementById('fontSizeDisplay');
+            const decreaseBtn = document.getElementById('fontDecrease');
+            const increaseBtn = document.getElementById('fontIncrease');
+            const resetBtn = document.getElementById('fontReset');
+
+            function setFontSize(size) {
+                const container = getContainer();
+                if (!container) return;
+                size = Math.min(40, Math.max(10, size));
+                container.style.fontSize = size + 'px';
+                if (slider) slider.value = size;
+                if (display) display.textContent = size;
+                localStorage.setItem('lyricsFontSize', size);
+            }
+
+            if (slider) {
+                slider.addEventListener('input', function() {
+                    setFontSize(parseFloat(this.value));
+                });
+            }
+
+            if (decreaseBtn) {
+                decreaseBtn.addEventListener('click', function() {
+                    const current = parseFloat(getContainer()?.style.fontSize) || 16;
+                    setFontSize(current - 2);
+                });
+            }
+
+            if (increaseBtn) {
+                increaseBtn.addEventListener('click', function() {
+                    const current = parseFloat(getContainer()?.style.fontSize) || 16;
+                    setFontSize(current + 2);
+                });
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
                     localStorage.removeItem('lyricsFontSize');
                     const container = getContainer();
                     if (container) {
                         container.style.fontSize = '';
                     }
-                    const slider = document.getElementById('fontSizeSlider');
-                    const display = document.getElementById('fontSizeDisplay');
-                    if (slider) slider.value = 16;
-                    if (display) display.textContent = 16;
+                    const computed = window.getComputedStyle(container).fontSize;
+                    const size = parseFloat(computed) || 16;
+                    if (slider) slider.value = size;
+                    if (display) display.textContent = Math.round(size);
                 });
             }
         });
