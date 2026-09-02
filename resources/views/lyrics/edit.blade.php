@@ -57,9 +57,11 @@
                             <h5 class="card-title mb-0"><i class="fas fa-eye me-2"></i>Preview (Romanized)</h5>
                         </div>
                         <div class="card-body" id="previewContainer">
-                            <div id="previewContent" style="font-family: 'Courier New', monospace; white-space: pre; line-height: 1.0; font-size: 16px; overflow-x: auto;">
+                            <div id="previewContent">
                                 <em class="text-muted">Edit the lyrics to see the preview.</em>
                             </div>
+                            <!-- Debug output (hidden by default) -->
+                            <div id="debugOutput" class="mt-2 small text-danger" style="display:none; border-top:1px solid #ddd; padding-top:0.5rem;"></div>
                         </div>
                     </div>
                 </div>
@@ -74,21 +76,48 @@
     .font-monospace {
         font-family: 'Courier New', monospace;
     }
-    #previewContent .chord-line {
-        display: none !important;
-    }
-    #previewContent .lyric-line {
+
+    /* ---- Chord-sheet preview styles (matching the final display) ---- */
+    .chord-sheet-pre {
+        font-family: 'Courier New', monospace;
+        font-size: 16px;
+        line-height: 1.8;
+        white-space: pre;
         margin: 0;
-        padding: 0.1rem 0;
-        line-height: 1.6;
+        padding: 0;
+        background: transparent;
+        border: none;
     }
-    #previewContent .section-heading {
+    .section-heading {
         font-weight: 700;
         font-size: 1.1em;
-        border-bottom: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color, #dee2e6);
         padding-bottom: 0.15rem;
-        margin: 0.5rem 0 0.15rem 0;
-        color: var(--text-color);
+        margin: 0.75rem 0 0.25rem 0;
+        color: var(--text-color, #212529);
+    }
+    #previewContent {
+        font-size: clamp(14px, 2vw, 18px);
+        overflow-x: auto;
+        overflow-y: auto;
+        max-height: 500px;
+        width: 100%;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 0.25rem;
+        word-break: break-word;
+        white-space: normal; /* the <pre> inside will manage whitespace */
+    }
+
+    @media (max-width: 576px) {
+        #previewContent {
+            font-size: 14px !important;
+            padding: 0.75rem !important;
+            max-height: 350px !important;
+        }
+        .card-body {
+            padding: 0.75rem;
+        }
     }
     @media (max-width: 992px) {
         .col-lg-6 {
@@ -103,49 +132,86 @@
     document.addEventListener('DOMContentLoaded', function() {
         const content = document.getElementById('content');
         const previewContent = document.getElementById('previewContent');
-        let previewDebounce;
+        const debugOutput = document.getElementById('debugOutput');
+
+        function debug(msg) {
+            debugOutput.style.display = 'block';
+            debugOutput.innerHTML = msg;
+            console.debug('[Preview Debug]', msg);
+        }
+
+        function clearDebug() {
+            debugOutput.style.display = 'none';
+            debugOutput.innerHTML = '';
+        }
 
         function updatePreview() {
             const text = content.value.trim();
             if (!text) {
                 previewContent.innerHTML = '<em class="text-muted">Enter some lyrics to see the preview.</em>';
+                clearDebug();
                 return;
             }
-            fetch('{{ route("lyrics.preview") }}', {
+
+            // 🔥 Use a protocol-relative URL (works on HTTP and HTTPS)
+            const url = '/lyrics/preview';
+
+            // Get CSRF token from meta tag (fallback to Blade helper)
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+            debug('→ Fetching: ' + window.location.origin + url);
+            debug('→ Using CSRF: ' + csrfToken.substring(0, 10) + '…');
+
+            fetch(url, {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({ content: text })
             })
-            .then(res => {
-                if (!res.ok) {
-                    return res.text().then(text => { throw new Error(text || 'Server error occurred.'); });
+            .then(response => {
+                debug('→ Status: ' + response.status + ' ' + response.statusText);
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        let errorMsg = text || 'Server error (status ' + response.status + ')';
+                        if (errorMsg.includes('<')) {
+                            const temp = document.createElement('div');
+                            temp.innerHTML = errorMsg;
+                            errorMsg = temp.textContent || errorMsg;
+                            if (errorMsg.length > 200) errorMsg = errorMsg.substring(0, 200) + '…';
+                        }
+                        throw new Error(errorMsg);
+                    });
                 }
-                return res.json();
+                return response.json();
             })
             .then(data => {
-                previewContent.innerHTML = data.html;
-            })
-            .catch(err => {
-                let errorMsg = err.message || 'Could not load preview.';
-                if (errorMsg.includes('<')) {
-                    const temp = document.createElement('div');
-                    temp.innerHTML = errorMsg;
-                    errorMsg = temp.textContent || errorMsg;
-                    if (errorMsg.length > 200) errorMsg = errorMsg.substring(0, 200) + '…';
+                debug('→ Response OK, HTML length: ' + (data.html ? data.html.length : '0'));
+                if (data.html) {
+                    previewContent.innerHTML = data.html;
+                    clearDebug();
+                } else {
+                    previewContent.innerHTML = '<span class="text-warning">⚠️ Empty response from server.</span>';
+                    debug('⚠️ Empty HTML in response');
                 }
-                previewContent.innerHTML = `<span class="text-danger">⚠️ ${errorMsg}</span>`;
-                console.error('Preview error:', err);
+            })
+            .catch(error => {
+                console.error('Preview error:', error);
+                let msg = error.message || 'Could not load preview.';
+                previewContent.innerHTML = `<span class="text-danger">⚠️ ${msg}</span>`;
+                debug('❌ Error: ' + msg);
             });
         }
 
         content.addEventListener('input', function() {
-            clearTimeout(previewDebounce);
-            previewDebounce = setTimeout(updatePreview, 300);
+            clearTimeout(window.previewDebounce);
+            window.previewDebounce = setTimeout(updatePreview, 300);
         });
 
+        // Initial preview if content has value (existing lyric)
         if (content.value.trim()) {
             updatePreview();
         }

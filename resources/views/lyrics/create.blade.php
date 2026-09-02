@@ -60,6 +60,8 @@
                             <div id="previewContent">
                                 <em class="text-muted">Start typing to see the preview here.</em>
                             </div>
+                            <!-- Debug output (hidden by default) -->
+                            <div id="debugOutput" class="mt-2 small text-danger" style="display:none; border-top:1px solid #ddd; padding-top:0.5rem;"></div>
                         </div>
                     </div>
                 </div>
@@ -132,59 +134,87 @@
     document.addEventListener('DOMContentLoaded', function() {
         const content = document.getElementById('content');
         const previewContent = document.getElementById('previewContent');
-        let previewDebounce;
+        const debugOutput = document.getElementById('debugOutput');
+
+        function debug(msg) {
+            debugOutput.style.display = 'block';
+            debugOutput.innerHTML = msg;
+            console.debug('[Preview Debug]', msg);
+        }
+
+        function clearDebug() {
+            debugOutput.style.display = 'none';
+            debugOutput.innerHTML = '';
+        }
 
         function updatePreview() {
             const text = content.value.trim();
             if (!text) {
                 previewContent.innerHTML = '<em class="text-muted">Enter some lyrics to see the preview.</em>';
+                clearDebug();
                 return;
             }
 
-            // 🔥 FIX: Use relative URL (no domain/scheme) – works on both HTTP and HTTPS
-            const url = '{{ route("lyrics.preview", [], false) }}';
+            // 🔥 CRITICAL FIX: Use a protocol-relative (or absolute) URL
+            // This ensures the request uses the same protocol as the page (HTTPS)
+            const url = '/lyrics/preview';
+
+            // Get CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+            debug('→ Fetching: ' + window.location.origin + url);
+            debug('→ Using CSRF: ' + csrfToken.substring(0, 10) + '…');
 
             fetch(url, {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json'
                 },
                 body: JSON.stringify({ content: text })
             })
             .then(response => {
+                debug('→ Status: ' + response.status + ' ' + response.statusText);
                 if (!response.ok) {
                     return response.text().then(text => {
-                        throw new Error(text || 'Server error');
+                        let errorMsg = text || 'Server error (status ' + response.status + ')';
+                        if (errorMsg.includes('<')) {
+                            const temp = document.createElement('div');
+                            temp.innerHTML = errorMsg;
+                            errorMsg = temp.textContent || errorMsg;
+                            if (errorMsg.length > 200) errorMsg = errorMsg.substring(0, 200) + '…';
+                        }
+                        throw new Error(errorMsg);
                     });
                 }
                 return response.json();
             })
             .then(data => {
+                debug('→ Response OK, HTML length: ' + (data.html ? data.html.length : '0'));
                 if (data.html) {
                     previewContent.innerHTML = data.html;
+                    clearDebug();
                 } else {
-                    previewContent.innerHTML = '<span class="text-warning">⚠️ Empty response</span>';
+                    previewContent.innerHTML = '<span class="text-warning">⚠️ Empty response from server.</span>';
+                    debug('⚠️ Empty HTML in response');
                 }
             })
             .catch(error => {
-                console.error('Preview fetch error:', error);
+                console.error('Preview error:', error);
                 let msg = error.message || 'Could not load preview.';
-                if (msg.includes('<')) {
-                    const temp = document.createElement('div');
-                    temp.innerHTML = msg;
-                    msg = temp.textContent || msg;
-                }
                 previewContent.innerHTML = `<span class="text-danger">⚠️ ${msg}</span>`;
+                debug('❌ Error: ' + msg);
             });
         }
 
         content.addEventListener('input', function() {
-            clearTimeout(previewDebounce);
-            previewDebounce = setTimeout(updatePreview, 300);
+            clearTimeout(window.previewDebounce);
+            window.previewDebounce = setTimeout(updatePreview, 300);
         });
 
+        // Initial preview if content has value
         if (content.value.trim()) {
             updatePreview();
         }
