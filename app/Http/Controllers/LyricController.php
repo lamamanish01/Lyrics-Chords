@@ -72,10 +72,7 @@ class LyricController extends Controller implements HasMiddleware
 
     public function preview(Request $request)
     {
-        $request->validate([
-            'content' => 'required|string',
-        ]);
-
+        $request->validate(['content' => 'required|string']);
         $html = ChordFormatter::toChordSheet($request->content);
         return response()->json(['html' => $html]);
     }

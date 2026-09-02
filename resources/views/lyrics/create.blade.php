@@ -16,9 +16,7 @@
                 <!-- Left: Form -->
                 <div class="col-lg-6">
                     <div class="mb-3">
-                        <label for="song_id" class="form-label">
-                            Song <span class="text-danger">*</span>
-                        </label>
+                        <label for="song_id" class="form-label">Song <span class="text-danger">*</span></label>
                         <select name="song_id" id="song_id" class="form-select" required>
                             @foreach($songs as $id => $title)
                                 <option value="{{ $id }}" {{ old('song_id', $songId ?? '') == $id ? 'selected' : '' }}>{{ $title }}</option>
@@ -59,7 +57,6 @@
                             <h5 class="card-title mb-0"><i class="fas fa-eye me-2"></i>Preview (Romanized)</h5>
                         </div>
                         <div class="card-body" id="previewContainer">
-                            <!-- Preview container – clean, no conflicting inline styles -->
                             <div id="previewContent">
                                 <em class="text-muted">Start typing to see the preview here.</em>
                             </div>
@@ -78,7 +75,6 @@
         font-family: 'Courier New', monospace;
     }
 
-    /* ---- Chord-sheet preview styles (matching the actual display) ---- */
     .chord-sheet-pre {
         font-family: 'Courier New', monospace;
         font-size: 16px;
@@ -97,7 +93,6 @@
         margin: 0.75rem 0 0.25rem 0;
         color: var(--text-color, #212529);
     }
-    /* The preview container itself should not interfere */
     #previewContent {
         font-size: clamp(14px, 2vw, 18px);
         overflow-x: auto;
@@ -108,11 +103,9 @@
         background: #f8f9fa;
         border-radius: 0.25rem;
         word-break: break-word;
-        /* Reset whitespace – the formatter's <pre> will handle it */
-        white-space: normal;
+        white-space: normal; /* let the <pre> inside take over */
     }
 
-    /* Extra small screen adjustments */
     @media (max-width: 576px) {
         #previewContent {
             font-size: 14px !important;
@@ -148,33 +141,41 @@
                 return;
             }
 
-            fetch('{{ route("lyrics.preview") }}', {
+            const url = '{{ route("lyrics.preview") }}';
+
+            fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({ content: text })
             })
-            .then(res => {
-                if (!res.ok) {
-                    return res.text().then(text => { throw new Error(text || 'Server error occurred.'); });
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(text || 'Server error');
+                    });
                 }
-                return res.json();
+                return response.json();
             })
             .then(data => {
-                previewContent.innerHTML = data.html;
-            })
-            .catch(err => {
-                let errorMsg = err.message || 'Could not load preview.';
-                if (errorMsg.includes('<')) {
-                    const temp = document.createElement('div');
-                    temp.innerHTML = errorMsg;
-                    errorMsg = temp.textContent || errorMsg;
-                    if (errorMsg.length > 200) errorMsg = errorMsg.substring(0, 200) + '…';
+                if (data.html) {
+                    previewContent.innerHTML = data.html;
+                } else {
+                    previewContent.innerHTML = '<span class="text-warning">⚠️ Empty response</span>';
                 }
-                previewContent.innerHTML = `<span class="text-danger">⚠️ ${errorMsg}</span>`;
-                console.error('Preview error:', err);
+            })
+            .catch(error => {
+                console.error('Preview fetch error:', error);
+                let msg = error.message || 'Could not load preview.';
+                if (msg.includes('<')) {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = msg;
+                    msg = temp.textContent || msg;
+                }
+                previewContent.innerHTML = `<span class="text-danger">⚠️ ${msg}</span>`;
             });
         }
 
