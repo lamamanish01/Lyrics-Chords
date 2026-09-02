@@ -103,7 +103,7 @@
         background: #f8f9fa;
         border-radius: 0.25rem;
         word-break: break-word;
-        white-space: normal; /* let the <pre> inside take over */
+        white-space: normal;
     }
 
     @media (max-width: 576px) {
@@ -141,7 +141,8 @@
                 return;
             }
 
-            const url = '{{ route("lyrics.preview") }}';
+            // 🔥 FIX: Use relative URL (no domain/scheme) – works on both HTTP and HTTPS
+            const url = '{{ route("lyrics.preview", [], false) }}';
 
             fetch(url, {
                 method: 'POST',
