@@ -1,6 +1,6 @@
 {{-- Wrap the entire lyrics section if 'view lyrics' permission is required --}}
 @can('view lyrics')
-    <div id="lyrics-container" style="font-size: 16px; line-height: 1.0;">
+    <div id="lyrics-container" style="font-size: 16px;">
         @forelse($lyrics as $lyric)
             <div class="lyric-block mb-3 p-2 bg-light-subtle rounded-3 border-start border-4 border-primary">
                 <div class="lyric-content">
@@ -35,3 +35,26 @@
 @else
     <p class="text-muted">You do not have permission to view lyrics.</p>
 @endcan
+
+{{-- You can place this CSS in your main stylesheet instead --}}
+<style>
+    .chord-sheet-pre {
+        font-family: 'Courier New', monospace;
+        font-size: 16px;
+        line-height: 1.8;
+        white-space: pre;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        border: none;
+    }
+    .section-heading {
+        font-weight: bold;
+        margin: 1em 0 0.5em 0;
+        color: #2c3e50;
+    }
+    /* Ensure the container doesn't interfere */
+    .lyric-content {
+        white-space: normal; /* reset, as pre handles its own */
+    }
+</style>

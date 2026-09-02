@@ -5,7 +5,7 @@ namespace App\Helpers;
 class ChordFormatter
 {
     /**
-     * Original method – keeps [Chord] inline as a span.
+     * Original method – keeps [Chord] inline as a span (used elsewhere).
      */
     public static function format(string $text): string
     {
@@ -54,7 +54,8 @@ class ChordFormatter
     }
 
     /**
-     * Convert to chord‑sheet style (chords above lyrics).
+     * Convert to chord‑sheet style (chords above lyrics) – FIXED version.
+     * Preserves all spacing using a <pre> block.
      * Removes brackets, aligns chords above corresponding lyric lines.
      * Skips empty or whitespace‑only lines.
      */
@@ -64,7 +65,7 @@ class ChordFormatter
         $text = preg_replace('/\n\s*\n/', "\n", $text);
 
         $lines = explode("\n", $text);
-        $output = [];
+        $outputLines = [];
         $lastChordLine = null;
 
         foreach ($lines as $line) {
@@ -74,13 +75,14 @@ class ChordFormatter
                 continue;
             }
 
-            // Section header like [Intro], [Verse]
+            // Section header like [Intro], [Verse] – output as separate block
             if (preg_match('/^\[([^\]]+)\]$/', $line, $matches)) {
+                // If we had a pending chord line, push it before the heading
                 if ($lastChordLine !== null) {
-                    $output[] = '<div class="chord-line">' . e($lastChordLine) . '</div>';
+                    $outputLines[] = $lastChordLine; // chord line
                     $lastChordLine = null;
                 }
-                $output[] = '<div class="section-heading">' . e($matches[1]) . '</div>';
+                $outputLines[] = '---SECTION---' . $matches[1]; // marker for later
                 continue;
             }
 
@@ -88,26 +90,53 @@ class ChordFormatter
             if (preg_match('/\[[^\]]+\]/', $line)) {
                 // Remove brackets and normalize each chord token
                 $chordLine = preg_replace('/\[([^\]]+)\]/', '$1', $line);
-                // Normalize each chord in the line (split by spaces, process, rejoin)
                 $tokens = explode(' ', $chordLine);
                 $normalizedTokens = array_map([self::class, 'normalizeChord'], $tokens);
                 $lastChordLine = implode(' ', $normalizedTokens);
             } else {
                 // Lyric line
                 if ($lastChordLine !== null) {
-                    $output[] = '<div class="chord-line">' . e($lastChordLine) . '</div>';
-                    $output[] = '<div class="lyric-line">' . e($line) . '</div>';
+                    // Output chord line, then lyric line
+                    $outputLines[] = $lastChordLine;
+                    $outputLines[] = $line;
                     $lastChordLine = null;
                 } else {
-                    $output[] = '<div class="lyric-line">' . e($line) . '</div>';
+                    // Standalone lyric line (no preceding chord line)
+                    $outputLines[] = $line;
                 }
             }
         }
 
+        // If there's a leftover chord line (no lyric after), add it
         if ($lastChordLine !== null) {
-            $output[] = '<div class="chord-line">' . e($lastChordLine) . '</div>';
+            $outputLines[] = $lastChordLine;
         }
 
-        return implode("\n", $output);
+        // Now convert to HTML: wrap in <pre> for proper spacing
+        $html = '';
+        $inPre = false;
+        foreach ($outputLines as $line) {
+            if (strpos($line, '---SECTION---') === 0) {
+                // Close pre if open
+                if ($inPre) {
+                    $html .= '</pre>';
+                    $inPre = false;
+                }
+                $heading = substr($line, 13); // remove marker
+                $html .= '<div class="section-heading">' . e($heading) . '</div>';
+            } else {
+                // This is a chord or lyric line
+                if (!$inPre) {
+                    $html .= '<pre class="chord-sheet-pre">';
+                    $inPre = true;
+                }
+                $html .= e($line) . "\n";
+            }
+        }
+        if ($inPre) {
+            $html .= '</pre>';
+        }
+
+        return $html;
     }
 }

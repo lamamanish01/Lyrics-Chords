@@ -18,7 +18,7 @@
                     <div class="mb-3">
                         <label for="song_id" class="form-label">
                             Song <span class="text-danger">*</span>
-                        </label> <!-- ✅ fixed duplicate </label> -->
+                        </label>
                         <select name="song_id" id="song_id" class="form-select" required>
                             @foreach($songs as $id => $title)
                                 <option value="{{ $id }}" {{ old('song_id', $songId ?? '') == $id ? 'selected' : '' }}>{{ $title }}</option>
@@ -59,20 +59,8 @@
                             <h5 class="card-title mb-0"><i class="fas fa-eye me-2"></i>Preview (Romanized)</h5>
                         </div>
                         <div class="card-body" id="previewContainer">
-                            <div id="previewContent" style="
-                                font-family: 'Courier New', monospace;
-                                white-space: pre;
-                                line-height: 1.6;
-                                font-size: clamp(14px, 2vw, 18px);
-                                overflow-x: auto;
-                                overflow-y: auto;
-                                max-height: 500px;
-                                width: 100%;
-                                padding: 1rem;
-                                background: #f8f9fa;
-                                border-radius: 0.25rem;
-                                word-break: break-word;
-                            ">
+                            <!-- Preview container – clean, no conflicting inline styles -->
+                            <div id="previewContent">
                                 <em class="text-muted">Start typing to see the preview here.</em>
                             </div>
                         </div>
@@ -89,23 +77,41 @@
     .font-monospace {
         font-family: 'Courier New', monospace;
     }
-    /* Hide chord lines in the preview – if you want to show chords, remove this block */
-    #previewContent .chord-line {
-        display: none !important;
-    }
-    #previewContent .lyric-line {
+
+    /* ---- Chord-sheet preview styles (matching the actual display) ---- */
+    .chord-sheet-pre {
+        font-family: 'Courier New', monospace;
+        font-size: 16px;
+        line-height: 1.8;
+        white-space: pre;
         margin: 0;
-        padding: 0.1rem 0;
-        line-height: 1.6;
+        padding: 0;
+        background: transparent;
+        border: none;
     }
-    #previewContent .section-heading {
+    .section-heading {
         font-weight: 700;
         font-size: 1.1em;
-        border-bottom: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color, #dee2e6);
         padding-bottom: 0.15rem;
-        margin: 0.5rem 0 0.15rem 0;
-        color: var(--text-color);
+        margin: 0.75rem 0 0.25rem 0;
+        color: var(--text-color, #212529);
     }
+    /* The preview container itself should not interfere */
+    #previewContent {
+        font-size: clamp(14px, 2vw, 18px);
+        overflow-x: auto;
+        overflow-y: auto;
+        max-height: 500px;
+        width: 100%;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 0.25rem;
+        word-break: break-word;
+        /* Reset whitespace – the formatter's <pre> will handle it */
+        white-space: normal;
+    }
+
     /* Extra small screen adjustments */
     @media (max-width: 576px) {
         #previewContent {
@@ -141,6 +147,7 @@
                 previewContent.innerHTML = '<em class="text-muted">Enter some lyrics to see the preview.</em>';
                 return;
             }
+
             fetch('{{ route("lyrics.preview") }}', {
                 method: 'POST',
                 headers: {
@@ -176,7 +183,6 @@
             previewDebounce = setTimeout(updatePreview, 300);
         });
 
-        // Initial preview if content already has a value (e.g., from old input)
         if (content.value.trim()) {
             updatePreview();
         }
